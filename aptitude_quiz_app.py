@@ -64,6 +64,35 @@ if st.button("Submit"):
                 "Score": score,
                 "Total": total
             })
-            st.success(f"✅ Your response has been recorded successfully")
+            st.success(f"✅ Your response has been recorded successfully! Score: {score}/{total}")
         except Exception as e:
             st.error(f"❌ Error saving your result: {e}")
+
+# -----------------------------
+# 📥 Admin / Export Section (ADD THIS AT THE END)
+# -----------------------------
+st.subheader("📥 Export All Responses (Admin Use)")
+
+if st.button("Download All Responses as CSV"):
+    try:
+        # Fetch all documents from Firestore
+        docs = db.collection("aptitude_results").stream()
+        data = []
+        for doc in docs:
+            d = doc.to_dict()
+            data.append(d)
+
+        # Convert to DataFrame and offer as CSV
+        if data:
+            df = pd.DataFrame(data)
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="⬇️ Download CSV File",
+                data=csv,
+                file_name="aptitude_responses.csv",
+                mime="text/csv"
+            )
+        else:
+            st.info("No records found yet.")
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
