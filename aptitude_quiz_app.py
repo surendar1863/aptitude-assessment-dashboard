@@ -1,6 +1,8 @@
-import streamlit as st
 import pandas as pd
 import os
+import gspread
+from google.oauth2.service_account import Credentials
+import streamlit as st
 
 st.title("Aptitude Test Assessment")
 
@@ -22,30 +24,21 @@ for i, row in questions_df.iterrows():
         score += 1
 
 if st.button("Submit"):
-   
-    # Prepare the result dictionary
-    result = {
-        "Name": name,
-        "Roll": roll,
-        "Score": score,
-        "Total": len(questions_df)
-    }
+    
+    result = {"Name": name, "Roll": roll, "Score": score, "Total": len(questions_df)}
+    
+    # Authorize with Google Sheets
+    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"])
+    client = gspread.authorize(creds)
 
-    # ✅ Save to Google Sheet instead of local CSV
-    import gspread
+    # Open your Google Sheet by name or URL
+    sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1mEHO0N4lF1O_DrJVVpronS9x_iF8Y66Sg7V7nLv6Tx0/edit?usp=sharing").sheet1  # 👈 paste your sheet link here
 
-    try:
-        # Connect to Google Sheets using Streamlit Secrets
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        sh = gc.open("aptitude_results")  # your Google Sheet name
-        worksheet = sh.sheet1
+    # Append data to the next row
+    sheet.append_row(list(result.values()))
 
-        # Append the student's record
-        worksheet.append_row([name, roll, score, len(questions_df)])
+    st.success("✅ Your responses have been submitted successfully!")
 
-        st.success("✅ Result submitted successfully to cloud!")
-    except Exception as e:
-        st.error(f"⚠️ Error saving to Google Sheet: {e}")
 
 
 
