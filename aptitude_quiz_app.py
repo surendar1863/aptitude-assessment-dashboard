@@ -1,44 +1,42 @@
-import pandas as pd
-import os
-import gspread
-from google.oauth2.service_account import Credentials
 import streamlit as st
+import firebase_admin
+from firebase_admin import credentials, firestore
+import pandas as pd
 
-st.title("Aptitude Test Assessment")
+# Initialize Firebase only once
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase_key.json")  # We'll fix this in Step 3
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+st.title("🧠 Aptitude Quiz")
 
 name = st.text_input("Enter your name")
-roll = st.text_input("Enter your roll number")
+roll = st.text_input("Enter your Roll No")
 
-# Load questions from CSV
-questions_df = pd.read_csv("aptitude_questions.csv")
-
-st.subheader("Answer the following:")
+questions = [
+    {"q": "5 + 7 =", "a": "12"},
+    {"q": "Capital of India?", "a": "New Delhi"},
+    {"q": "10 * 3 =", "a": "30"},
+]
 
 score = 0
-for i, row in questions_df.iterrows():
-    q = row["Question"]
-    options = [row["Option1"], row["Option2"], row["Option3"], row["Option4"]]
-    correct = row["Correct"]
-    ans = st.radio(f"{i+1}. {q}", options, key=i)
-    if ans == correct:
+answers = []
+
+for q in questions:
+    ans = st.text_input(f"{q['q']}")
+    answers.append(ans)
+    if ans.strip().lower() == q['a'].strip().lower():
         score += 1
 
 if st.button("Submit"):
-    
-    result = {"Name": name, "Roll": roll, "Score": score, "Total": len(questions_df)}
-    
-    # Authorize with Google Sheets
-    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"])
-    client = gspread.authorize(creds)
-
-    # Open your Google Sheet by name or URL
-    sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1mEHO0N4lF1O_DrJVVpronS9x_iF8Y66Sg7V7nLv6Tx0/edit?usp=sharing").sheet1  # 👈 paste your sheet link here
-
-    # Append data to the next row
-    sheet.append_row(list(result.values()))
-
-    st.success("✅ Your responses have been submitted successfully!")
-
-
-
-
+    total = len(questions)
+    doc_ref = db.collection("responses").document(roll)
+    doc_ref.set({
+        "Name": name,
+        "Roll": roll,
+        "Score": score,
+        "Total": total
+    })
+    st.success(f"✅ Your response has been recorded! Score: {score}/{total}")
