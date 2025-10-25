@@ -31,33 +31,44 @@ name = st.text_input("Enter your name")
 roll = st.text_input("Enter your Roll No")
 
 # -----------------------------
-# Questions
+# Load Questions from CSV
 # -----------------------------
-questions = [
-    {"q": "5 + 7 =", "a": "12"},
-    {"q": "Capital of India?", "a": "New Delhi"},
-    {"q": "10 * 3 =", "a": "30"},
-]
-
-score = 0
-answers = []
-
-for q in questions:
-    ans = st.text_input(f"{q['q']}")
-    answers.append(ans)
-    if ans.strip().lower() == q['a'].strip().lower():
-        score += 1
+try:
+    df = pd.read_csv("aptitude_questions.csv")  # your uploaded CSV file
+except Exception as e:
+    st.error(f"⚠️ Could not load questions file: {e}")
+    st.stop()
 
 # -----------------------------
-# Submit Button
+# Display Questions
+# -----------------------------
+st.subheader("Answer the following questions:")
+
+user_answers = {}
+for i, row in df.iterrows():
+    q = row["Question"]
+    options = [row["Option1"], row["Option2"], row["Option3"], row["Option4"]]
+    user_choice = st.radio(f"{i+1}. {q}", options, key=f"q_{i}")
+    user_answers[q] = user_choice
+
+# -----------------------------
+# Submit Answers
 # -----------------------------
 if st.button("Submit"):
     if not name or not roll:
         st.warning("⚠️ Please enter both Name and Roll Number before submitting.")
     else:
-        total = len(questions)
+        score = 0
+        total = len(df)
+
+        for i, row in df.iterrows():
+            correct = str(row["Correct"]).strip().lower()
+            given = str(user_answers[row["Question"]]).strip().lower()
+            if correct == given:
+                score += 1
+
         try:
-            # Store result in Firestore collection
+            # Save result to Firestore
             db.collection("aptitude_results").document(roll).set({
                 "Name": name,
                 "Roll": roll,
@@ -69,23 +80,20 @@ if st.button("Submit"):
             st.error(f"❌ Error saving your result: {e}")
 
 # -----------------------------
-# 📥 Admin / Export Section (ADD THIS AT THE END)
+# 📥 Admin / Export Section
 # -----------------------------
 st.subheader("📥 Export All Responses (Admin Use)")
 
 if st.button("Download All Responses as CSV"):
     try:
-        # Fetch all documents from Firestore
         docs = db.collection("aptitude_results").stream()
         data = []
         for doc in docs:
-            d = doc.to_dict()
-            data.append(d)
+            data.append(doc.to_dict())
 
-        # Convert to DataFrame and offer as CSV
         if data:
-            df = pd.DataFrame(data)
-            csv = df.to_csv(index=False)
+            df_results = pd.DataFrame(data)
+            csv = df_results.to_csv(index=False)
             st.download_button(
                 label="⬇️ Download CSV File",
                 data=csv,
