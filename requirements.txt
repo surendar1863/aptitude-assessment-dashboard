@@ -4,3 +4,4 @@ plotly
 gspread
 streamlit-aggrid
 firebase_admin
+streamlit-autorefresh
