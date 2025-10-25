@@ -22,8 +22,7 @@ for i, row in questions_df.iterrows():
         score += 1
 
 if st.button("Submit"):
-if st.button("Submit"):
-    
+   
     # Prepare the result dictionary
     result = {
         "Name": name,
@@ -47,5 +46,6 @@ if st.button("Submit"):
         st.success("✅ Result submitted successfully to cloud!")
     except Exception as e:
         st.error(f"⚠️ Error saving to Google Sheet: {e}")
+
 
 
