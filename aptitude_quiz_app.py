@@ -75,32 +75,7 @@ if st.button("Submit"):
                 "Score": score,
                 "Total": total
             })
-            st.success(f"✅ Your response has been recorded successfully! Score: {score}/{total}")
+            st.success(f"✅ Your response has been recorded successfully")
         except Exception as e:
             st.error(f"❌ Error saving your result: {e}")
 
-# -----------------------------
-# 📥 Admin / Export Section
-# -----------------------------
-st.subheader("📥 Export All Responses (Admin Use)")
-
-if st.button("Download All Responses as CSV"):
-    try:
-        docs = db.collection("aptitude_results").stream()
-        data = []
-        for doc in docs:
-            data.append(doc.to_dict())
-
-        if data:
-            df_results = pd.DataFrame(data)
-            csv = df_results.to_csv(index=False)
-            st.download_button(
-                label="⬇️ Download CSV File",
-                data=csv,
-                file_name="aptitude_responses.csv",
-                mime="text/csv"
-            )
-        else:
-            st.info("No records found yet.")
-    except Exception as e:
-        st.error(f"Error fetching data: {e}")
