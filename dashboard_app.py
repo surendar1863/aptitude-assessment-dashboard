@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import gspread
 
 
 st.set_page_config(page_title="Aptitude Dashboard", layout="wide")
@@ -9,7 +10,13 @@ st.set_page_config(page_title="Aptitude Dashboard", layout="wide")
 st.title("📊 Aptitude Test Dashboard")
 
 # Load data
-df = pd.read_csv("results.csv")
+
+
+gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+sh = gc.open("aptitude_results")
+worksheet = sh.sheet1
+data = worksheet.get_all_records()
+df = pd.DataFrame(data)
 
 # -----------------------------
 # Summary Section
@@ -114,3 +121,4 @@ if not filtered_df.empty:
             """,
             unsafe_allow_html=True,
         )
+
